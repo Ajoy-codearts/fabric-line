@@ -1,7 +1,33 @@
+//canvas
 var canvas = new fabric.Canvas('canvas',{
-    width:700,
+    width:900,
     height:400
 })
+canvas.renderAll();
+
+
+//image upload
+document.getElementById('uploadbtn').addEventListener('change', function(obj){
+    var fileOrigin = obj.target.files[0];
+    var reader = new FileReader();
+    reader.onload=function(file){
+        var fileData = file.target.result;
+        fabric.Image.fromURL(fileData, function(obj){
+            var newImg = obj.set({
+                left:100, top:100
+            });
+            canvas.add(newImg).renderAll();
+            // var a = canvas.setActiveObject(newImg);
+            // var dataURL = canvas.toDataURL({format: 'png', quality: 0.8});
+        });
+    };
+   reader.readAsDataURL(fileOrigin);
+})
+
+
+  
+//line
+
 var activate = document.getElementById('activate');
 let line;
 activate.addEventListener('click',drawLine);
@@ -15,11 +41,12 @@ function drawLine(){
     canvas.selection=false;
     canvas.hoverCursor= 'auto';    
 }
+
 function switchOn(){
     let pointer = canvas.getPointer(this.e);
     line = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y],{
         id:'canvas-lines',
-        stroke:'yellow',
+        stroke: color,
         strokeWidth:2,
         selectable:false
     });
@@ -42,14 +69,9 @@ function switchOff(){
     flag = false;
     line.setCoords();
 }
-
+//line deactive
 var deactivate = document.getElementById('deactivate');
 deactivate.addEventListener('click',stopDrawLine);
-// const stopDrawLine=()=>{
-//     canvas.off('mouse:down',switchOn);
-//     canvas.off('mouse:move',switchDraw);
-//     canvas.off('mouse:up',switchOff);
-// }
 
 function stopDrawLine(){
     canvas.off('mouse:down',switchOn);
@@ -65,29 +87,101 @@ function stopDrawLine(){
     })
 }
 
+//rectangle
+function drawRect(){
+    canvas.on('mouse:down',RectOn);
+    canvas.on('mouse:move',RectDraw);
+    canvas.on('mouse:up',RectOff);
+}
+var fLeft = 0;
+var fTop = 0;
+let rectFlag = false;
+//mouse click (draw rectangle)
+const RectOn=()=>{
+    rectFlag = true;
+    let pointer = canvas.getPointer(this.e);
+    fLeft = pointer.x;  
+    fTop = pointer.y;
+    var rect = new fabric.Rect({
+        id: 'canvas-rect',
+        selectable: false,
+        left: pointer.x,
+        top: pointer.y,
+        fill: color,
+        width: 1,
+        height: 1
+    });
+    canvas.add(rect);
+    canvas.requestRenderAll();
+    canvas.setActiveObject(rect);
+}
+
+//mouse move (draw rectangle)
+const RectDraw=()=>{
+    if(rectFlag===true){
+        let pointer = canvas.getPointer(this.e);
+        var nLeft = Math.min(fLeft, pointer.x);
+        var nTop = Math.min(fTop, pointer.y);
+        var nWidth = Math.abs(pointer.x - fLeft);
+        var nHeight = Math.abs(pointer.y - fTop);
+        if (!nWidth || !nHeight) {
+
+            return false;
+    
+        }
+        var item = canvas.getActiveObject();
+        item.set('left', nLeft).set('top', nTop).set('width', nWidth).set('height', nHeight);
+        canvas.renderAll();
+    }
+}
+//mouse remove click(draw rectangle)
+const RectOff=()=>{
+    if(rectFlag){
+        rectFlag = false;
+    }
+}
+//rectangle active button
+var rectBtn = document.getElementById('rect');
+rect.addEventListener('click', activeRect);
+
+function activeRect(){
+    drawRect();
+}
+//rectangle deactive button
+const stopRect=()=>{
+    canvas.off('mouse:down',RectOn);
+    canvas.off('mouse:move',RectDraw);
+    canvas.off('mouse:up',RectOff);
+    canvas.getObjects().forEach((o)=>{
+        if(o.id==='canvas-rect'){
+            o.set({
+                selectable:true
+            })
+        }
+    })
+}
 
 
-
-   var color= document.getElementById('color');
-   color.addEventListener('change',(event)=>{
-       changeColor(this);
-   });
-
-
-// canvas.on('change', ()=>{
-//     line.setStroke($('input#color').val())
-//     canvas.renderAll();
-//   })
+//changeColor
+var color = '#000000FF';
+colorPicker=()=>{
+    var colorbx = document.getElementById('colorbx');
+    colorbx.addEventListener('change',(event)=>{
+        color = event.target.value;
+    })
+}
+colorPicker();
 
 
-
-  function changeColor(element) 
-{
-    var activeObject = canvas.getActiveObject(),
-    color = "#"+element.value;
-
-    console.log(color)    
-    console.log(activeObject)
-    activeObject.set({stroke : color, strokeWidth: 5});
+//clearAll
+var clear = document.getElementById('clearAll');
+const clearAll=(canvas)=>{
+    canvas.clear();
     canvas.renderAll();
+}
+
+deleteItem=()=>{
+    var item = canvas.getActiveObject();
+    canvas.remove(item);
+    console.log('click');
 }
